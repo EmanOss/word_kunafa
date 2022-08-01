@@ -149,7 +149,7 @@ class _PlayScreenState extends State<PlayScreen> {
                   return Flex(direction: Axis.horizontal,
                     children: [ Expanded(
                       child: SizedBox(
-                        height: 200.0,
+                        height: 300.0,
                         child: ListView.builder(
                           // shrinkWrap: false,
                             itemCount: items[_currLevel].letters == null ? 0 : items[_currLevel].letters!.length,
