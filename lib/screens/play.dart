@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../level.dart';
+import '../my_styles.dart';
 import 'my_home.dart';
 import 'package:flutter/services.dart' as rootBundle;
 
@@ -9,27 +10,10 @@ class PlayScreen extends StatefulWidget {
   State<PlayScreen> createState() => _PlayScreenState();
 }
 
-class _myStyles {
-  static final letters = TextStyle(
-    fontSize: 50,
-    color: Colors.brown,
-  );
-  static final title = TextStyle(
-    fontSize: 25,
-  );
-  static final words = TextStyle(
-    fontSize: 25,
-  );
-}
-
 class _PlayScreenState extends State<PlayScreen> {
   String _word = "";
   List<String> _solved = [];
-  List<String> _solvedBonus = [];
   int _currLevel=0;
-  // List<String> currCorrect=[];
-  // List<String> currBonus=[];
-  // List<String> currLetters=[];
   List<level> allLevels=[];
 
   void _addLetter(String c) {
@@ -45,27 +29,43 @@ class _PlayScreenState extends State<PlayScreen> {
   int _checkWord(String w){
     //retuns 1 if word is correct, 2 if it's in the bonus list, 0 if it's wrong
     return(allLevels[_currLevel].correct!.contains(w)&& !_solved.contains(w))?
-     1: (allLevels[_currLevel].bonus!.contains(w) && !_solvedBonus.contains(w))? 2:0;
+     1:0;
   }
-  void _addSolvedWord(String w) {
+  void _addSolvedWord(String w, BuildContext c) {
     int check = _checkWord(w);
     if(check==1) {
       setState(() {
         _solved.add(w);
       });
       _clearWord();
+      if(_solved.length == 5)
+        _endLevel(c);
     }
-    else
-      if(check==2) {
-        setState(() {
-          _solvedBonus.add(w);
-        });
-        _clearWord();
-      }
     else {
       //todo add err msg/indication
         _clearWord();
       }
+  }
+  void _endLevel(BuildContext c){
+    showDialog(context: c,
+        builder: (_)=>
+            AlertDialog(contentPadding:EdgeInsets.all(20),
+              title: Center(heightFactor: 1,
+                  child:Text("تهانينا", style: myStyles.dialogTitle,)),
+              content: Center(heightFactor: 1,
+                  child:Text("لقد تخطيت المرحلة")),
+              actions: [Center(heightFactor: 1,
+                  child:ElevatedButton(
+                onPressed: () => _nextLevel(),
+                child: Text("التالي",style: myStyles.btn,))), ],));
+  }
+  void _nextLevel(){
+    setState(() {
+      _currLevel++;
+      _solved=[];
+      _word="";
+    });
+    Navigator.pop(context);
   }
 
   void _back() {
@@ -96,7 +96,7 @@ class _PlayScreenState extends State<PlayScreen> {
         title: Center(
             child: Text(
               (_currLevel+1).toString()+" مستوى ",
-              style: _myStyles.title,
+              style: myStyles.title,
             )),
       ),
       body: Center(
@@ -119,20 +119,15 @@ class _PlayScreenState extends State<PlayScreen> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Card(
-                child:
-        Card(child:
-        Padding(padding: const EdgeInsets.all(10),
-        child: Row(children: [
-          // Row(children: [Text("solved"),const Spacer(flex:1), Text("Bonus")],),
-          Column(children: _solved.map<Card>((s) =>Card(child:Center(child:Text(s, style: _myStyles.words,),))).toList(),),
-          const Spacer(flex: 1,),
-          Column(children: _solvedBonus.map<Card>((s) =>Card(child:Center(child:Text(s, style: _myStyles.words,),))).toList(),),
-        ],)))
-            ),
+            Container(height: 100,child:
+              Padding(padding: const EdgeInsets.all(10),
+              // child: Align(alignment: Alignment.centerRight,
+                  child:Wrap( direction: Axis.vertical,
+                    children: _solved.map<Card>((s) =>Card(elevation: 0,child:Center(child:Text(s, style: myStyles.words,),))).toList(),),
+              )),
             Text(
               _word,
-              style: _myStyles.letters,
+              style: myStyles.letters,
             ),
             FutureBuilder(
             future: ReadJsonData(),
@@ -163,7 +158,7 @@ class _PlayScreenState extends State<PlayScreen> {
                                 children: [
                                   GestureDetector(
                                     onTap: () => _addLetter(items[_currLevel].letters![index]),
-                                    child: Text(items[_currLevel].letters![index], style: _myStyles.letters),
+                                    child: Text(items[_currLevel].letters![index], style: myStyles.letters),
                                   ),
                                 ],
                               ),
@@ -183,12 +178,13 @@ class _PlayScreenState extends State<PlayScreen> {
                 }
               },
             ),
-            ElevatedButton(
+            Center(child: Row(children: [ElevatedButton(
                 onPressed: () => _clearWord(),
                 child: const Icon(Icons.refresh)),
+            // Spacer(flex:1),
             ElevatedButton(
-                onPressed: () => _addSolvedWord(_word),
-                child: const Icon(Icons.check)),
+                onPressed: () => _addSolvedWord(_word, context),
+                child: const Icon(Icons.check)),]))
           ],
         ),
       ),
