@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../level.dart';
@@ -10,11 +13,12 @@ class PlayScreen extends StatefulWidget {
   State<PlayScreen> createState() => _PlayScreenState();
 }
 
-class _PlayScreenState extends State<PlayScreen> {
-  String _word = "";
+class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
+  String _word = "د";
   List<String> _solved = [];
   int _currLevel=0;
   List<level> allLevels=[];
+  late AnimationController _controller;
 
   void _addLetter(String c) {
     setState(() {
@@ -26,14 +30,12 @@ class _PlayScreenState extends State<PlayScreen> {
       _word ="";
     });
   }
-  int _checkWord(String w){
+  bool _checkWord(String w){
     //retuns 1 if word is correct, 2 if it's in the bonus list, 0 if it's wrong
-    return(allLevels[_currLevel].correct!.contains(w)&& !_solved.contains(w))?
-     1:0;
+    return allLevels[_currLevel].correct!.contains(w) && !_solved.contains(w);
   }
   void _addSolvedWord(String w, BuildContext c) {
-    int check = _checkWord(w);
-    if(check==1) {
+    if(_checkWord(w)) {
       setState(() {
         _solved.add(w);
       });
@@ -57,7 +59,8 @@ class _PlayScreenState extends State<PlayScreen> {
               actions: [Center(heightFactor: 1,
                   child:ElevatedButton(
                 onPressed: () => _nextLevel(),
-                child: Text("التالي",style: myStyles.btn,))), ],));
+                child: Text("التالي",style: myStyles.btnText,))), ],));
+    // Navigator.pop(context);
   }
   void _nextLevel(){
     setState(() {
@@ -67,11 +70,76 @@ class _PlayScreenState extends State<PlayScreen> {
     });
     Navigator.pop(context);
   }
+  void _resetGame(){
+    setState(() {
+      _currLevel=0;
+      _solved=[];
+      _word="";
+    });
+    Navigator.pop(context);
+  }
+  void _settings(){
+    showDialog(context: context, builder: (_)=> 
+        AlertDialog(
+          title: Center(heightFactor: 1,
+            child:Text("إعدادات", style: myStyles.dialogTitle,)),
+          actions: [
+          Center(heightFactor: 1,
+          child:Row(children:[
+            Spacer(flex: 2,),
+            ElevatedButton(onPressed: ()=>{_resetGame()},
+                child: const Icon(Icons.refresh, size: 25,)),
+            Spacer(flex: 1,),
+            ElevatedButton(
+                onPressed: () => _endLevel(context),
+                child: const Icon(Icons.arrow_forward, size: 25,)),
+            Spacer(flex: 2,),])),
+          ],
+        ));
+  }
+  void _showLetter() {
+      List? curr = allLevels[_currLevel].correct;
+      Random random = new Random();
+      int i = random.nextInt(curr!.length);
+      while (_solved.contains(curr[i])) {
+        random.nextInt(curr.length);
+      }
+      _word = curr[i][0];
+      Navigator.pop(context);
+  }
+  void _hint(){
+    showDialog(context: context, builder: (_)=>
+        AlertDialog(
+          title: Center(heightFactor: 1,
+              child:Text("مساعدة", style: myStyles.dialogTitle,)),
+          actions: [
+            Center(heightFactor: 1,
+                child:Row(children:[
+                  Spacer(flex: 2,),
+                  ElevatedButton(onPressed: ()=>{_showLetter()},
+                      child: Text("إظهار أول حرف")),
+                  Spacer(flex: 2,),
+                  ])),
+          ],
+        ));
+  }
 
   void _back() {
     Navigator.pop(context);
   }
+    void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    )..repeat();
+  }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   Future<List<level>> ReadJsonData() async {
     //read json file
@@ -98,6 +166,14 @@ class _PlayScreenState extends State<PlayScreen> {
               (_currLevel+1).toString()+" مستوى ",
               style: myStyles.title,
             )),
+        leading: IconButton(onPressed:()=> _back(),
+            icon:const Icon(Icons.arrow_back_ios, size:25,)),
+        actions: [
+          IconButton(onPressed:()=> _hint(),
+              icon:const Icon(Icons.help, size:25,)),
+          IconButton(onPressed:()=> _settings(),
+          icon:const Icon(Icons.settings, size:25,)),
+        ],
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
@@ -119,18 +195,25 @@ class _PlayScreenState extends State<PlayScreen> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Container(height: 100,child:
+            Container(height: 200,child:
               Padding(padding: const EdgeInsets.all(10),
-              // child: Align(alignment: Alignment.centerRight,
                   child:Wrap( direction: Axis.vertical,
-                    children: _solved.map<Card>((s) =>Card(elevation: 0,child:Center(child:Text(s, style: myStyles.words,),))).toList(),),
+                    textDirection: TextDirection.rtl,
+                    children: _solved.map<Card>((s) =>Card(elevation: 0, child:Center(heightFactor: 1,child:Text(s, style: myStyles.words,),))).toList(),),
               )),
-            Text(
-              _word,
-              style: myStyles.letters,
+            AnimatedBuilder(
+                builder: (context, child) {
+                  return Transform.rotate(
+                    angle: _controller.value * 2 * pi,
+                    child: child,);
+                },
+                animation: _controller, //Tween(begin: 0, end: 2*pi).animate(_controller),
+                child://Container(child:Text("HI")),
+                Container(height: 100, child:Text(
+              _word,style: myStyles.letters,),)
             ),
             FutureBuilder(
-            future: ReadJsonData(),
+              future: ReadJsonData(),
               builder: (context, data) {
                 if (data.hasError) {
                   //in case if error found
@@ -140,35 +223,22 @@ class _PlayScreenState extends State<PlayScreen> {
                   // items will hold all the data of DataModel
                   //items[index].name can be used to fetch name of product as done below
                   var items = data.data as List<level>;
-
                   return Flex(direction: Axis.horizontal,
                     children: [ Expanded(
                       child: SizedBox(
-                        height: 300.0,
-                        child: ListView.builder(
-                          // shrinkWrap: false,
+                        height: 250.0,
+                        child:ListView.builder(
+                            scrollDirection: Axis.horizontal,
                             itemCount: items[_currLevel].letters == null ? 0 : items[_currLevel].letters!.length,
                             itemBuilder: (context, index) {
-                              // print("lenght hena");
-                              // print(items[_currLevel].letters!.length);
-                              return  Container(child:
-                              Row(children: [
-                                const Spacer(flex: 1,),
-                                Column(
-                                children: [
-                                  GestureDetector(
+                              return Padding(padding:EdgeInsets.all(30),
+                                      child:GestureDetector(
                                     onTap: () => _addLetter(items[_currLevel].letters![index]),
                                     child: Text(items[_currLevel].letters![index], style: myStyles.letters),
-                                  ),
-                                ],
-                              ),
-                                const Spacer(flex: 1,),
-                                // const Spacer(flex: 1,),
-                              ],),);
+                                  ));
                             }),
-                      ),
-                    )
-                    ],);
+                      )
+                    ) ],);
                 }
                 else {
                   // show circular progress while data is getting fetched from json file
@@ -178,13 +248,20 @@ class _PlayScreenState extends State<PlayScreen> {
                 }
               },
             ),
-            Center(child: Row(children: [ElevatedButton(
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Spacer(flex: 2,),
+              ElevatedButton(
+                style: myStyles.btn,
                 onPressed: () => _clearWord(),
-                child: const Icon(Icons.refresh)),
-            // Spacer(flex:1),
+                child: const Icon(Icons.delete, size:35,)),
+            Spacer(flex:1),
             ElevatedButton(
+                style: myStyles.btn,
                 onPressed: () => _addSolvedWord(_word, context),
-                child: const Icon(Icons.check)),]))
+                child: const Icon(Icons.check, size: 35,)),
+              Spacer(flex: 2,),
+            ]),
+
           ],
         ),
       ),

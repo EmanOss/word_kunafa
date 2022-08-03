@@ -16,10 +16,12 @@ class myStyles {
     fontSize: 40,
     color: Colors.brown,
   );
-  static const btn = TextStyle(
+  static const btnText = TextStyle(
     fontSize: 20,
     // color: Colors.brown,
   );
+  static final btn = ButtonStyle(
+    minimumSize: MaterialStateProperty.all( Size(90, 50)),
 
-
+  );
 }
