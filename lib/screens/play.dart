@@ -201,17 +201,19 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                     textDirection: TextDirection.rtl,
                     children: _solved.map<Card>((s) =>Card(elevation: 0, child:Center(heightFactor: 1,child:Text(s, style: myStyles.words,),))).toList(),),
               )),
-            AnimatedBuilder(
-                builder: (context, child) {
-                  return Transform.rotate(
-                    angle: _controller.value * 2 * pi,
-                    child: child,);
-                },
-                animation: _controller, //Tween(begin: 0, end: 2*pi).animate(_controller),
-                child://Container(child:Text("HI")),
-                Container(height: 100, child:Text(
-              _word,style: myStyles.letters,),)
-            ),
+            Container(height: 100, child:Text(
+              _word,style: myStyles.letters,),),
+            // AnimatedBuilder(
+            //     builder: (context, child) {
+            //       return Transform.rotate(
+            //         angle: _controller.value * 2 * pi,
+            //         child: child,);
+            //     },
+            //     animation: _controller, //Tween(begin: 0, end: 2*pi).animate(_controller),
+            //     child://Container(child:Text("HI")),
+            //     Container(height: 100, child:Text(
+            //   _word,style: myStyles.letters,),)
+            // ),
             FutureBuilder(
               future: ReadJsonData(),
               builder: (context, data) {
