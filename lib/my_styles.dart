@@ -24,4 +24,7 @@ class myStyles {
     minimumSize: MaterialStateProperty.all( Size(90, 50)),
 
   );
+  static const tray = BoxDecoration(
+    // image: DecorationImage(image: AssetImage("assets/tray1.jpg"))
+  );
 }

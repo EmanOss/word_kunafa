@@ -40,7 +40,7 @@ class MyHome extends StatelessWidget {
           children: <Widget>[
             ElevatedButton(
                 onPressed: _play,
-                child: Text("PLAY"))
+                child: Text("إلعب !"))
             // ElevatedButton(
             //   child: Text("Play"),
             //   onPressed: _startGame,

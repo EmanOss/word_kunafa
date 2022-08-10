@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
@@ -14,11 +15,13 @@ class PlayScreen extends StatefulWidget {
 }
 
 class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
-  String _word = "د";
+  String _word = "";
   List<String> _solved = [];
   int _currLevel=0;
   List<level> allLevels=[];
   late AnimationController _controller;
+  late Animation<double> anim;
+  late Future<List<level>> _myJsonData;
 
   void _addLetter(String c) {
     setState(() {
@@ -34,7 +37,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     //retuns 1 if word is correct, 2 if it's in the bonus list, 0 if it's wrong
     return allLevels[_currLevel].correct!.contains(w) && !_solved.contains(w);
   }
-  void _addSolvedWord(String w, BuildContext c) {
+  Future<void> _addSolvedWord(String w, BuildContext c) async {
     if(_checkWord(w)) {
       setState(() {
         _solved.add(w);
@@ -44,8 +47,10 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         _endLevel(c);
     }
     else {
-      //todo add err msg/indication
-        _clearWord();
+      _controller.forward();
+      await Future.delayed(Duration(seconds: 1));
+      _controller.stop();
+      _clearWord();
       }
   }
   void _endLevel(BuildContext c){
@@ -129,10 +134,22 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   }
     void initState() {
     super.initState();
+    _myJsonData = ReadJsonData();
     _controller = AnimationController(
-      duration: const Duration(seconds: 10),
+      duration: const Duration(milliseconds: 70),
       vsync: this,
-    )..repeat();
+    );
+    anim = Tween<double>(
+      begin: 0,
+      end: 7,
+    ).animate(_controller)
+      ..addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _controller.reverse();
+      } else if (status == AnimationStatus.dismissed) {
+        _controller.forward();
+      }
+    });
   }
 
   @override
@@ -143,7 +160,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
 
   Future<List<level>> ReadJsonData() async {
     //read json file
-    final jsondata = await rootBundle.rootBundle.loadString('data_repo/levels.json');
+    final jsondata = await rootBundle.rootBundle.loadString('assets/levels.json');
     //decode json data as list
     final list = json.decode(jsondata) as List<dynamic>;
     //map json and initialize using DataModel
@@ -170,7 +187,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
             icon:const Icon(Icons.arrow_back_ios, size:25,)),
         actions: [
           IconButton(onPressed:()=> _hint(),
-              icon:const Icon(Icons.help, size:25,)),
+              icon:const Icon(Icons.lightbulb, size:25,)),
           IconButton(onPressed:()=> _settings(),
           icon:const Icon(Icons.settings, size:25,)),
         ],
@@ -195,27 +212,26 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Container(height: 200,child:
-              Padding(padding: const EdgeInsets.all(10),
-                  child:Wrap( direction: Axis.vertical,
-                    textDirection: TextDirection.rtl,
-                    children: _solved.map<Card>((s) =>Card(elevation: 0, child:Center(heightFactor: 1,child:Text(s, style: myStyles.words,),))).toList(),),
-              )),
-            Container(height: 100, child:Text(
-              _word,style: myStyles.letters,),),
-            // AnimatedBuilder(
-            //     builder: (context, child) {
-            //       return Transform.rotate(
-            //         angle: _controller.value * 2 * pi,
-            //         child: child,);
-            //     },
-            //     animation: _controller, //Tween(begin: 0, end: 2*pi).animate(_controller),
-            //     child://Container(child:Text("HI")),
-            //     Container(height: 100, child:Text(
-            //   _word,style: myStyles.letters,),)
-            // ),
+            Container(height: 200, decoration: myStyles.tray,
+                  child:GridView.count(
+                    crossAxisCount: 3,
+                    children: _solved.map<Container>((s) =>Container(alignment: Alignment.topCenter,
+                          child:Text(s, style: myStyles.words,),)).toList(),),),
+            AnimatedBuilder(
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(anim.value,1),
+                    child: Container(height: 100,
+                      child:Text(_word,style: myStyles.letters,),),
+                  );
+                },
+                animation: _controller, //Tween(begin: 0, end: 2*pi).animate(_controller),
+                child://Container(child:Text("HI")),
+                Container(height: 100, child:Text(
+                  _word,style: myStyles.letters,),)
+            ),
             FutureBuilder(
-              future: ReadJsonData(),
+              future: _myJsonData,
               builder: (context, data) {
                 if (data.hasError) {
                   //in case if error found
@@ -228,17 +244,31 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                   return Flex(direction: Axis.horizontal,
                     children: [ Expanded(
                       child: SizedBox(
-                        height: 250.0,
-                        child:ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: items[_currLevel].letters == null ? 0 : items[_currLevel].letters!.length,
-                            itemBuilder: (context, index) {
-                              return Padding(padding:EdgeInsets.all(30),
-                                      child:GestureDetector(
-                                    onTap: () => _addLetter(items[_currLevel].letters![index]),
-                                    child: Text(items[_currLevel].letters![index], style: myStyles.letters),
-                                  ));
-                            }),
+                        height: 220,
+                        width: 50,
+                        child: GridView.count(
+                              crossAxisCount: 3,
+                              childAspectRatio: 2/1,
+                              children:
+                            //   [
+                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
+                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
+                            // GestureDetector(onTap: ()=> _addLetter(items[_currLevel].letters![0]),child:
+                            // Container(alignment: Alignment.topCenter,child:Text( items[_currLevel].letters![0], style: myStyles.letters,),),),
+                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
+                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
+                            //
+                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
+                            //     Container(alignment: Alignment.topCenter,child:Text( items[_currLevel].letters![1], style: myStyles.letters,),),
+                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
+                            //     Container(alignment: Alignment.topCenter,child:Text( items[_currLevel].letters![2], style: myStyles.letters,),),
+                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
+                            //   ]
+                          items[_currLevel].letters!.map<Container>((s) =>
+                              Container(alignment: Alignment.topCenter,
+                                child:GestureDetector(onTap:()=>_addLetter(s),
+                                    child:Text(s, style: myStyles.letters,)),)).toList(),
+                        )
                       )
                     ) ],);
                 }
