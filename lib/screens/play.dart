@@ -22,6 +22,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> anim;
   late Future<List<level>> _myJsonData;
+  late List<GlobalKey> letterKeys;
 
   void _addLetter(String c) {
     setState(() {
@@ -128,11 +129,10 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           ],
         ));
   }
-
   void _back() {
     Navigator.pop(context);
   }
-    void initState() {
+  void initState() {
     super.initState();
     _myJsonData = ReadJsonData();
     _controller = AnimationController(
@@ -150,14 +150,13 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         _controller.forward();
       }
     });
+    _getWidgetInfo();
   }
-
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-
   Future<List<level>> ReadJsonData() async {
     //read json file
     final jsondata = await rootBundle.rootBundle.loadString('assets/levels.json');
@@ -171,6 +170,15 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     return res;
   }
 
+  void _getWidgetInfo() {
+    final RenderBox renderBox = _trashKey.currentContext?.findRenderObject() as RenderBox;
+    final Size size = renderBox.size; // or _widgetKey.currentContext?.size
+    print('Size: ${size.width}, ${size.height}');
+
+    final Offset offset = renderBox.localToGlobal(Offset.zero);
+    print('Offset: ${offset.dx}, ${offset.dy}');
+    // print('Position: ${(offset.dx + size.width) / 2}, ${(offset.dy + size.height) / 2}');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -247,26 +255,21 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                         height: 220,
                         width: 50,
                         child: GridView.count(
-                              crossAxisCount: 3,
+                              crossAxisCount: 2,
                               childAspectRatio: 2/1,
-                              children:
-                            //   [
-                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
-                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
-                            // GestureDetector(onTap: ()=> _addLetter(items[_currLevel].letters![0]),child:
-                            // Container(alignment: Alignment.topCenter,child:Text( items[_currLevel].letters![0], style: myStyles.letters,),),),
-                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
-                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
-                            //
-                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
-                            //     Container(alignment: Alignment.topCenter,child:Text( items[_currLevel].letters![1], style: myStyles.letters,),),
-                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
-                            //     Container(alignment: Alignment.topCenter,child:Text( items[_currLevel].letters![2], style: myStyles.letters,),),
-                            //     Container(alignment: Alignment.topCenter,child:Spacer(),),
-                            //   ]
-                          items[_currLevel].letters!.map<Container>((s) =>
+                              children: items[_currLevel].letters!.map<Container>((s) =>
                               Container(alignment: Alignment.topCenter,
-                                child:GestureDetector(onTap:()=>_addLetter(s),
+                                //add listview.builder somewhere here
+                                //so that i can add each letter's key to the list based on its index
+                                child:GestureDetector(
+                                    // onTap:()=>_addLetter(s),
+                                    onPanStart:(DragStartDetails dragStartDetails){ _addLetter(s);},
+                                    onPanUpdate:(DragUpdateDetails dd){
+                                    //  todo if overlapping with other letters, add those letters
+                                    // print(dd.globalPosition);
+                                      print()
+                                    },
+                                    // onPanEnd: (DragEndDetails d){_clearWord();},
                                     child:Text(s, style: myStyles.letters,)),)).toList(),
                         )
                       )
@@ -283,6 +286,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Spacer(flex: 2,),
               ElevatedButton(
+                // key: _trashKey,
                 style: myStyles.btn,
                 onPressed: () => _clearWord(),
                 child: const Icon(Icons.delete, size:35,)),
