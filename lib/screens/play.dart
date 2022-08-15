@@ -22,7 +22,9 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> anim;
   late Future<List<level>> _myJsonData;
-  late List<GlobalKey> letterKeys;
+  late List<GlobalKey> letterKeys=[];
+  // final GlobalKey letterKeys = GlobalKey();
+  bool addedKeys=false;
 
   void _addLetter(String c) {
     setState(() {
@@ -132,8 +134,14 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   void _back() {
     Navigator.pop(context);
   }
+  void _initKeys(){
+    for(int i=0; i<4;i++){
+      letterKeys.add(GlobalKey());
+    }
+  }
   void initState() {
     super.initState();
+    _initKeys();
     _myJsonData = ReadJsonData();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 70),
@@ -150,7 +158,6 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         _controller.forward();
       }
     });
-    _getWidgetInfo();
   }
   @override
   void dispose() {
@@ -170,15 +177,19 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     return res;
   }
 
-  void _getWidgetInfo() {
-    final RenderBox renderBox = _trashKey.currentContext?.findRenderObject() as RenderBox;
-    final Size size = renderBox.size; // or _widgetKey.currentContext?.size
-    print('Size: ${size.width}, ${size.height}');
+  void _getWidgetInfo() =>
+      WidgetsBinding.instance?.addPostFrameCallback((_) {
+        //todo loop over letterkeys and store size/area in an arr
+        //use this arr later to detect drag into a letter
+        final RenderBox renderBox = letterKeys[0].currentContext?.findRenderObject() as RenderBox;
+        final Size size = renderBox.size; // or _widgetKey.currentContext?.size
+        print('Size: ${size.width}, ${size.height}');
 
-    final Offset offset = renderBox.localToGlobal(Offset.zero);
-    print('Offset: ${offset.dx}, ${offset.dy}');
-    // print('Position: ${(offset.dx + size.width) / 2}, ${(offset.dy + size.height) / 2}');
-  }
+        final Offset offset = renderBox.localToGlobal(Offset.zero);
+        print('Offset: ${offset.dx}, ${offset.dy}');
+        print('Position: ${(offset.dx + size.width) / 2}, ${(offset.dy + size.height) / 2}');
+
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -220,11 +231,13 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Container(height: 200, decoration: myStyles.tray,
+        Directionality(
+            textDirection: TextDirection.rtl,
+            child:Container(height: 200, decoration: myStyles.tray,
                   child:GridView.count(
                     crossAxisCount: 3,
                     children: _solved.map<Container>((s) =>Container(alignment: Alignment.topCenter,
-                          child:Text(s, style: myStyles.words,),)).toList(),),),
+                          child:Text(s, style: myStyles.words,),)).toList(),),)),
             AnimatedBuilder(
                 builder: (context, child) {
                   return Transform.translate(
@@ -239,6 +252,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                   _word,style: myStyles.letters,),)
             ),
             FutureBuilder(
+              // key: letterKeys,
               future: _myJsonData,
               builder: (context, data) {
                 if (data.hasError) {
@@ -249,31 +263,51 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                   // items will hold all the data of DataModel
                   //items[index].name can be used to fetch name of product as done below
                   var items = data.data as List<level>;
-                  return Flex(direction: Axis.horizontal,
-                    children: [ Expanded(
-                      child: SizedBox(
-                        height: 220,
-                        width: 50,
-                        child: GridView.count(
-                              crossAxisCount: 2,
-                              childAspectRatio: 2/1,
-                              children: items[_currLevel].letters!.map<Container>((s) =>
-                              Container(alignment: Alignment.topCenter,
-                                //add listview.builder somewhere here
-                                //so that i can add each letter's key to the list based on its index
-                                child:GestureDetector(
-                                    // onTap:()=>_addLetter(s),
-                                    onPanStart:(DragStartDetails dragStartDetails){ _addLetter(s);},
-                                    onPanUpdate:(DragUpdateDetails dd){
-                                    //  todo if overlapping with other letters, add those letters
-                                    // print(dd.globalPosition);
-                                      print()
-                                    },
-                                    // onPanEnd: (DragEndDetails d){_clearWord();},
-                                    child:Text(s, style: myStyles.letters,)),)).toList(),
-                        )
-                      )
-                    ) ],);
+                  return Directionality(
+                      textDirection: TextDirection.rtl,
+                      child:Flex(direction: Axis.horizontal,
+                        children: [ Expanded(
+                          child: SizedBox(
+                            height: 220,
+                            width: 50,
+                            child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2, childAspectRatio: 2/1),
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: items[_currLevel].letters!.length,
+                              itemBuilder: (context, index) {
+                              return Container(alignment: Alignment.topCenter,
+                                  child:GestureDetector(
+                                    key: letterKeys[index],
+                                    onTap:(){
+                                      _addLetter(items[_currLevel].letters![index]);
+                                      if(!addedKeys){print('hi'); addedKeys=true; _getWidgetInfo();}
+                                      },
+                                    //todo - try here calling the getInfo method inside onTap
+                                    //also add a check so it's only called the 1st time
+                                    child: Text(items[_currLevel].letters![index], style: myStyles.letters,),
+                                  )
+                              );},)
+
+                            // GridView.count(
+                            //       crossAxisCount: 2,
+                            //       childAspectRatio: 2/1,
+                            //       children: items[_currLevel].letters!.map<Container>((s) =>
+                            //       Container(alignment: Alignment.topCenter,
+                            //         //add listview.builder somewhere here
+                            //         //so that i can add each letter's key to the list based on its index
+                            //         child:GestureDetector(
+                            //             // onTap:()=>_addLetter(s),
+                            //             onPanStart:(DragStartDetails dragStartDetails){ _addLetter(s);},
+                            //             onPanUpdate:(DragUpdateDetails dd){
+                            //             //  todo if overlapping with other letters, add those letters
+                            //             // print(dd.globalPosition);
+                            //               print('');
+                            //             },
+                            //             // onPanEnd: (DragEndDetails d){_clearWord();},
+                            //             child:Text(s, style: myStyles.letters,)),)).toList(),
+                            // )
+                          )
+                    ) ],));
                 }
                 else {
                   // show circular progress while data is getting fetched from json file
@@ -286,7 +320,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Spacer(flex: 2,),
               ElevatedButton(
-                // key: _trashKey,
+                  // key: letterKeys,
                 style: myStyles.btn,
                 onPressed: () => _clearWord(),
                 child: const Icon(Icons.delete, size:35,)),
