@@ -4,8 +4,10 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import '../area.dart';
 import '../level.dart';
 import '../my_styles.dart';
+import 'end_screen.dart';
 import 'my_home.dart';
 import 'package:flutter/services.dart' as rootBundle;
 
@@ -25,13 +27,17 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   late List<GlobalKey> letterKeys=[];
   // final GlobalKey letterKeys = GlobalKey();
   bool addedKeys=false;
+  late List<area> letterAreas =[];
 
   void _addLetter(String c) {
-    setState(() {
-      _word += c;
-    });
+    if(!(_word.contains(c))){
+      setState(() {
+        _word += c;
+      });
+    }
   }
   void _clearWord() {
+
     setState(() {
       _word ="";
     });
@@ -50,9 +56,9 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         _endLevel(c);
     }
     else {
-      _controller.forward();
-      await Future.delayed(Duration(seconds: 1));
-      _controller.stop();
+      // _controller.forward();
+      // await Future.delayed(Duration(milliseconds: 500));
+      // _controller.stop();
       _clearWord();
       }
   }
@@ -71,18 +77,33 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     // Navigator.pop(context);
   }
   void _nextLevel(){
-    setState(() {
-      _currLevel++;
-      _solved=[];
-      _word="";
-    });
-    Navigator.pop(context);
+    if(_currLevel+1 < allLevels.length){
+      setState(() {
+        _currLevel++;
+        _solved = [];
+        _word = "";
+        letterKeys = [];
+        _initKeys();
+        addedKeys = false;
+        letterAreas = [];
+      });
+      Navigator.pop(context);
+    }
+    else{
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => endScreen()));
+    }
+
   }
   void _resetGame(){
     setState(() {
       _currLevel=0;
       _solved=[];
       _word="";
+      letterKeys=[];
+      _initKeys();
+      addedKeys=false;
+      letterAreas=[];
     });
     Navigator.pop(context);
   }
@@ -135,7 +156,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     Navigator.pop(context);
   }
   void _initKeys(){
-    for(int i=0; i<4;i++){
+    for(int i=0; i<3;i++){
       letterKeys.add(GlobalKey());
     }
   }
@@ -179,15 +200,23 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
 
   void _getWidgetInfo() =>
       WidgetsBinding.instance?.addPostFrameCallback((_) {
-        //todo loop over letterkeys and store size/area in an arr
-        //use this arr later to detect drag into a letter
-        final RenderBox renderBox = letterKeys[0].currentContext?.findRenderObject() as RenderBox;
-        final Size size = renderBox.size; // or _widgetKey.currentContext?.size
-        print('Size: ${size.width}, ${size.height}');
+        for(int i=0;i<3;i++){
+          final RenderBox renderBox = letterKeys[i].currentContext?.findRenderObject() as RenderBox;
+          double w = renderBox.size.width;
+          double h = renderBox.size.height;
+          double x1 = renderBox.localToGlobal(Offset.zero).dx;
+          double y1 = renderBox.localToGlobal(Offset.zero).dy;
+          letterAreas.add(new area(x1,x1+w,y1,y1+h));
+          // print(x1.toString() +"  "+ (x1+w).toString() +"  "+y1.toString()+"  "+(y1+h).toString());
+        }
 
-        final Offset offset = renderBox.localToGlobal(Offset.zero);
-        print('Offset: ${offset.dx}, ${offset.dy}');
-        print('Position: ${(offset.dx + size.width) / 2}, ${(offset.dy + size.height) / 2}');
+        // final RenderBox renderBox = letterKeys[0].currentContext?.findRenderObject() as RenderBox;
+        // final Size size = renderBox.size;
+        // print('Size: ${size.width}, ${size.height}');
+        //
+        // final Offset offset = renderBox.localToGlobal(Offset.zero); //to make the origin at top left of screen not the widget
+        // print('Offset: ${offset.dx}, ${offset.dy}'); //top-left corner position
+        // print('Position: ${(offset.dx + size.width) / 2}, ${(offset.dy + size.height) / 2}'); //position exactly at center
 
       });
 
@@ -273,18 +302,28 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                             child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2, childAspectRatio: 2/1),
                               physics: const NeverScrollableScrollPhysics(),
-                              itemCount: items[_currLevel].letters!.length,
+                              itemCount: allLevels[_currLevel].letters!.length,
                               itemBuilder: (context, index) {
                               return Container(alignment: Alignment.topCenter,
                                   child:GestureDetector(
                                     key: letterKeys[index],
-                                    onTap:(){
-                                      _addLetter(items[_currLevel].letters![index]);
+                                    // onTap:(){
+                                    //   _addLetter(items[_currLevel].letters![index]);
+                                    //   if(!addedKeys){print('hi'); addedKeys=true; _getWidgetInfo();}
+                                    //   },
+                                    onPanStart: (DragStartDetails d){
+                                      _addLetter(allLevels[_currLevel].letters![index]);
                                       if(!addedKeys){print('hi'); addedKeys=true; _getWidgetInfo();}
+                                    },
+                                    onPanUpdate:(DragUpdateDetails dd){
+                                      for(int i=0; i<3;i++){
+                                        if(letterAreas[i].overlaps(dd.globalPosition.dx, dd.globalPosition.dy)){
+                                            _addLetter(allLevels[_currLevel].letters![i]);
+                                        }
+                                      }
                                       },
-                                    //todo - try here calling the getInfo method inside onTap
-                                    //also add a check so it's only called the 1st time
-                                    child: Text(items[_currLevel].letters![index], style: myStyles.letters,),
+                                    onPanEnd:(DragEndDetails d){_addSolvedWord(_word, context); _clearWord();},
+                                    child: Text(allLevels[_currLevel].letters![index], style: myStyles.letters,),
                                   )
                               );},)
 
@@ -317,20 +356,20 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                 }
               },
             ),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Spacer(flex: 2,),
-              ElevatedButton(
-                  // key: letterKeys,
-                style: myStyles.btn,
-                onPressed: () => _clearWord(),
-                child: const Icon(Icons.delete, size:35,)),
-            Spacer(flex:1),
-            ElevatedButton(
-                style: myStyles.btn,
-                onPressed: () => _addSolvedWord(_word, context),
-                child: const Icon(Icons.check, size: 35,)),
-              Spacer(flex: 2,),
-            ]),
+            // Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            //   Spacer(flex: 2,),
+            //   ElevatedButton(
+            //       // key: letterKeys,
+            //     style: myStyles.btn,
+            //     onPressed: () => _clearWord(),
+            //     child: const Icon(Icons.delete, size:35,)),
+            // Spacer(flex:1),
+            // ElevatedButton(
+            //     style: myStyles.btn,
+            //     onPressed: () => _addSolvedWord(_word, context),
+            //     child: const Icon(Icons.check, size: 35,)),
+            //   Spacer(flex: 2,),
+            // ]),
 
           ],
         ),
