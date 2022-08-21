@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:math';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
@@ -10,6 +9,8 @@ import '../my_styles.dart';
 import 'end_screen.dart';
 import 'my_home.dart';
 import 'package:flutter/services.dart' as rootBundle;
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class PlayScreen extends StatefulWidget {
   @override
@@ -76,10 +77,13 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                 child: Text("التالي",style: myStyles.btnText,))), ],));
     // Navigator.pop(context);
   }
-  void _nextLevel(){
+  Future<void> _nextLevel() async {
     if(_currLevel+1 < allLevels.length){
+      final prefs = await SharedPreferences.getInstance();
       setState(() {
-        _currLevel++;
+        prefs.setInt('currLevel', _currLevel+1);
+        _currLevel = prefs.getInt('currLevel')?? 0;
+        // _currLevel++;
         _solved = [];
         _word = "";
         letterKeys = [];
@@ -97,6 +101,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   }
   void _resetGame(){
     setState(() {
+      //todo - prefs w local
       _currLevel=0;
       _solved=[];
       _word="";
@@ -164,6 +169,8 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     super.initState();
     _initKeys();
     _myJsonData = ReadJsonData();
+    _initLevel();
+    //animation section
     _controller = AnimationController(
       duration: const Duration(milliseconds: 70),
       vsync: this,
@@ -178,6 +185,12 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
       } else if (status == AnimationStatus.dismissed) {
         _controller.forward();
       }
+    });
+  }
+  Future<void> _initLevel() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _currLevel = prefs.getInt('currLevel') ?? 0;
     });
   }
   @override
@@ -356,6 +369,14 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                 }
               },
             ),
+            if(_solved.length == 5)
+              ElevatedButton(
+                  style: myStyles.btn,
+                  onPressed: () => (_nextLevel()),
+                  child: const Icon(
+                    Icons.arrow_forward,
+                    size: 35,
+                  )),
             // Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             //   Spacer(flex: 2,),
             //   ElevatedButton(
