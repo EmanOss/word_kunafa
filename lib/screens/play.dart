@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import '../SwipePainter.dart';
 import '../area.dart';
 import '../level.dart';
 import '../my_styles.dart';
@@ -26,9 +27,9 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   late Animation<double> anim;
   late Future<List<level>> _myJsonData;
   late List<GlobalKey> letterKeys=[];
-  // final GlobalKey letterKeys = GlobalKey();
   bool addedKeys=false;
   late List<area> letterAreas =[];
+  late List<Offset> _myPoints = [];
 
   void _addLetter(String c) {
     if(!(_word.contains(c))){
@@ -38,7 +39,6 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     }
   }
   void _clearWord() {
-
     setState(() {
       _word ="";
     });
@@ -99,9 +99,10 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     }
 
   }
-  void _resetGame(){
+  Future<void> _resetGame() async {
+    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      //todo - prefs w local
+      prefs.setInt('currLevel', 0);
       _currLevel=0;
       _solved=[];
       _word="";
@@ -158,7 +159,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         ));
   }
   void _back() {
-    Navigator.pop(context);
+    // Navigator.pop(context);
   }
   void _initKeys(){
     for(int i=0; i<3;i++){
@@ -235,25 +236,27 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Center(
-            child: Text(
-              (_currLevel+1).toString()+" مستوى ",
-              style: myStyles.title,
-            )),
-        leading: IconButton(onPressed:()=> _back(),
-            icon:const Icon(Icons.arrow_back_ios, size:25,)),
-        actions: [
-          IconButton(onPressed:()=> _hint(),
-              icon:const Icon(Icons.lightbulb, size:25,)),
-          IconButton(onPressed:()=> _settings(),
-          icon:const Icon(Icons.settings, size:25,)),
-        ],
-      ),
-      body: Center(
+    return CustomPaint(
+        foregroundPainter: SwipePainter(_myPoints),
+        child: Scaffold(
+        appBar: AppBar(
+          // Here we take the value from the MyHomePage object that was created by
+          // the App.build method, and use it to set our appbar title.
+          title: Center(
+              child: Text(
+                (_currLevel+1).toString()+" مستوى ",
+                style: myStyles.title,
+              )),
+          leading: IconButton(onPressed:()=> _back(),
+              icon:const Icon(Icons.arrow_back_ios, size:25,)),
+          actions: [
+            IconButton(onPressed:()=> _hint(),
+                icon:const Icon(Icons.lightbulb, size:25,)),
+            IconButton(onPressed:()=> _settings(),
+            icon:const Icon(Icons.settings, size:25,)),
+          ],
+        ),
+        body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: Column(
@@ -278,6 +281,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
             child:Container(height: 200, decoration: myStyles.tray,
                   child:GridView.count(
                     crossAxisCount: 3,
+                    physics: const NeverScrollableScrollPhysics(),
                     children: _solved.map<Container>((s) =>Container(alignment: Alignment.topCenter,
                           child:Text(s, style: myStyles.words,),)).toList(),),)),
             AnimatedBuilder(
@@ -309,55 +313,45 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                       textDirection: TextDirection.rtl,
                       child:Flex(direction: Axis.horizontal,
                         children: [ Expanded(
-                          child: SizedBox(
-                            height: 220,
-                            width: 50,
-                            child: GridView.builder(gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2, childAspectRatio: 2/1),
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: allLevels[_currLevel].letters!.length,
-                              itemBuilder: (context, index) {
+                              child: SizedBox(
+                                      height: 220,
+                                      width: 50,
+                                      child: GridView.builder(
+                                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 2 / 1),
+                                        physics: const NeverScrollableScrollPhysics(),
+                                        itemCount: allLevels[_currLevel].letters!.length,
+                                        itemBuilder: (context, index) {
                               return Container(alignment: Alignment.topCenter,
                                   child:GestureDetector(
                                     key: letterKeys[index],
-                                    // onTap:(){
-                                    //   _addLetter(items[_currLevel].letters![index]);
-                                    //   if(!addedKeys){print('hi'); addedKeys=true; _getWidgetInfo();}
-                                    //   },
                                     onPanStart: (DragStartDetails d){
                                       _addLetter(allLevels[_currLevel].letters![index]);
-                                      if(!addedKeys){print('hi'); addedKeys=true; _getWidgetInfo();}
+                                      if(!addedKeys){addedKeys=true; _getWidgetInfo();}
+
+                                      setState(() {_myPoints.add(Offset(d.globalPosition.dx,d.globalPosition.dy));});
+                                      // setState(() {_myPoints.add(Offset(100,50));});
+                                      // setState(() {_myPoints.add(Offset(letterAreas[index].x1+10,letterAreas[index].y1+10));});
+                                      // print('');
+                                      // print(letterAreas[index].x1.toString() +'  '+ letterAreas[index].x2.toString() );
+                                      // print(letterAreas[index].y1.toString() +'  '+ letterAreas[index].y2.toString() );
+                                      // print('locall '+ d.localPosition.dx.toString()+'  '+ d.localPosition.dy.toString());
+                                      // print('globall '+ d.globalPosition.dx.toString()+'  '+ d.globalPosition.dy.toString());
+
                                     },
                                     onPanUpdate:(DragUpdateDetails dd){
                                       for(int i=0; i<3;i++){
                                         if(letterAreas[i].overlaps(dd.globalPosition.dx, dd.globalPosition.dy)){
                                             _addLetter(allLevels[_currLevel].letters![i]);
-                                        }
-                                      }
+                                        }}
+                                      setState(() {_myPoints.add(Offset(dd.globalPosition.dx,dd.globalPosition.dy));});
                                       },
-                                    onPanEnd:(DragEndDetails d){_addSolvedWord(_word, context); _clearWord();},
-                                    child: Text(allLevels[_currLevel].letters![index], style: myStyles.letters,),
+                                    onPanEnd:(DragEndDetails d){
+                                      _addSolvedWord(_word, context); _clearWord();
+                                      setState(() {_myPoints=[];});
+                                      },
+                                        child:Text(allLevels[_currLevel].letters![index], style: myStyles.letters,)
                                   )
                               );},)
-
-                            // GridView.count(
-                            //       crossAxisCount: 2,
-                            //       childAspectRatio: 2/1,
-                            //       children: items[_currLevel].letters!.map<Container>((s) =>
-                            //       Container(alignment: Alignment.topCenter,
-                            //         //add listview.builder somewhere here
-                            //         //so that i can add each letter's key to the list based on its index
-                            //         child:GestureDetector(
-                            //             // onTap:()=>_addLetter(s),
-                            //             onPanStart:(DragStartDetails dragStartDetails){ _addLetter(s);},
-                            //             onPanUpdate:(DragUpdateDetails dd){
-                            //             //  todo if overlapping with other letters, add those letters
-                            //             // print(dd.globalPosition);
-                            //               print('');
-                            //             },
-                            //             // onPanEnd: (DragEndDetails d){_clearWord();},
-                            //             child:Text(s, style: myStyles.letters,)),)).toList(),
-                            // )
                           )
                     ) ],));
                 }
@@ -395,6 +389,6 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           ],
         ),
       ),
-    );
+    ));
   }
 }
