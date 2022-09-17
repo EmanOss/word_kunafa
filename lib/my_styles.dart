@@ -27,4 +27,23 @@ class myStyles {
   static const tray = BoxDecoration(
     // image: DecorationImage(image: AssetImage("assets/tray1.jpg"))
   );
+  static const glow = BoxDecoration(
+      borderRadius: BorderRadius.all(
+        Radius.circular(18.0),
+      ),
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.pink,
+          spreadRadius: 4,
+          blurRadius: 10,
+        ),
+        BoxShadow(
+          color: Colors.pink,
+          spreadRadius: -4,
+          blurRadius: 5,
+        )
+      ]);
+
+  // static const glow2 =
 }

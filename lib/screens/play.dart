@@ -11,6 +11,7 @@ import 'end_screen.dart';
 import 'my_home.dart';
 import 'package:flutter/services.dart' as rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:confetti/confetti.dart';
 
 
 class PlayScreen extends StatefulWidget {
@@ -31,6 +32,8 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   late List<area> letterAreas =[];
   late List<Offset> _myPoints = [];
   late List<Offset> _vertices = [];
+  bool levelDone = false;
+  final _confettiController = ConfettiController();
 
   void _addLetter(String c, double x, double y) {
     if(!(_word.contains(c))){
@@ -66,22 +69,25 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
       }
   }
   void _endLevel(BuildContext c){
-    showDialog(context: c,
-        builder: (_)=>
-            AlertDialog(contentPadding:EdgeInsets.all(20),
-              title: Center(heightFactor: 1,
-                  child:Text("تهانينا", style: myStyles.dialogTitle,)),
-              content: Center(heightFactor: 1,
-                  child:Text("لقد تخطيت المرحلة")),
-              actions: [Center(heightFactor: 1,
-                  child:ElevatedButton(
-                onPressed: () => _nextLevel(),
-                child: Text("التالي",style: myStyles.btnText,))), ],));
+    _confettiController.play();
+    setState(() {levelDone = true;});
+    // showDialog(context: c,
+    //     builder: (_)=>
+    //         AlertDialog(contentPadding:EdgeInsets.all(20),
+    //           title: Center(heightFactor: 1,
+    //               child:Text("تهانينا", style: myStyles.dialogTitle,)),
+    //           content: Center(heightFactor: 1,
+    //               child:Text("لقد تخطيت المرحلة")),
+    //           actions: [Center(heightFactor: 1,
+    //               child:ElevatedButton(
+    //             onPressed: () => _nextLevel(),
+    //             child: Text("التالي",style: myStyles.btnText,))), ],));
     // Navigator.pop(context);
   }
   Future<void> _nextLevel() async {
     if(_currLevel+1 < allLevels.length){
       final prefs = await SharedPreferences.getInstance();
+      _confettiController.stop();
       setState(() {
         prefs.setInt('currLevel', _currLevel+1);
         _currLevel = prefs.getInt('currLevel')?? 0;
@@ -92,8 +98,9 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         _initKeys();
         addedKeys = false;
         letterAreas = [];
+        levelDone=false;
       });
-      Navigator.pop(context);
+      // Navigator.pop(context);
     }
     else{
       Navigator.push(context,
@@ -128,7 +135,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                 child: const Icon(Icons.refresh, size: 25,)),
             Spacer(flex: 1,),
             ElevatedButton(
-                onPressed: () => _endLevel(context),
+                onPressed: () => _nextLevel(),
                 child: const Icon(Icons.arrow_forward, size: 25,)),
             Spacer(flex: 2,),])),
           ],
@@ -199,7 +206,9 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _controller.dispose();
+    _confettiController.dispose();
     super.dispose();
+
   }
   Future<List<level>> ReadJsonData() async {
     //read json file
@@ -224,21 +233,11 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           double y1 = renderBox.localToGlobal(Offset.zero).dy;
           letterAreas.add(area(x1,x1+w,y1,y1+h));
           // print(x1.toString() +"  "+ (x1+w).toString() +"  "+y1.toString()+"  "+(y1+h).toString());
-        }
-
-        // final RenderBox renderBox = letterKeys[0].currentContext?.findRenderObject() as RenderBox;
-        // final Size size = renderBox.size;
-        // print('Size: ${size.width}, ${size.height}');
-        //
-        // final Offset offset = renderBox.localToGlobal(Offset.zero); //to make the origin at top left of screen not the widget
-        // print('Offset: ${offset.dx}, ${offset.dy}'); //top-left corner position
-        // print('Position: ${(offset.dx + size.width) / 2}, ${(offset.dy + size.height) / 2}'); //position exactly at center
-
-      });
+        }});
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
+    return Stack(children: [CustomPaint(
         foregroundPainter: SwipePainter(_myPoints, _vertices),
         child: Scaffold(
         appBar: AppBar(
@@ -357,17 +356,26 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                 }
               },
             ),
-            if(_solved.length == 5)
-              ElevatedButton(
-                  style: myStyles.btn,
-                  onPressed: () => (_nextLevel()),
-                  child: const Icon(
-                    Icons.arrow_forward,
-                    size: 35,
-                  )),
-          ],
+
+            // if(_solved.length == 5)
+            //   Stack(alignment: Alignment.center,
+            //       children:[
+            if(levelDone)
+            ElevatedButton(
+                style: myStyles.btn,
+                onPressed: () => (_nextLevel()),
+                child: const Icon(
+                  Icons.arrow_back,
+                  size: 35,
+                )),],
         ),
       ),
-    ));
+    )),
+        ConfettiWidget(
+        confettiController: _confettiController,
+        shouldLoop: true,
+        blastDirectionality: BlastDirectionality.directional,
+        colors: const [Colors.teal, Colors.grey]),
+    ]);
   }
 }
