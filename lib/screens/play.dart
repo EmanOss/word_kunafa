@@ -30,11 +30,13 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   bool addedKeys=false;
   late List<area> letterAreas =[];
   late List<Offset> _myPoints = [];
+  late List<Offset> _vertices = [];
 
-  void _addLetter(String c) {
+  void _addLetter(String c, double x, double y) {
     if(!(_word.contains(c))){
       setState(() {
         _word += c;
+        _vertices.add(Offset(x,y));
       });
     }
   }
@@ -220,7 +222,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           double h = renderBox.size.height;
           double x1 = renderBox.localToGlobal(Offset.zero).dx;
           double y1 = renderBox.localToGlobal(Offset.zero).dy;
-          letterAreas.add(new area(x1,x1+w,y1,y1+h));
+          letterAreas.add(area(x1,x1+w,y1,y1+h));
           // print(x1.toString() +"  "+ (x1+w).toString() +"  "+y1.toString()+"  "+(y1+h).toString());
         }
 
@@ -237,7 +239,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-        foregroundPainter: SwipePainter(_myPoints),
+        foregroundPainter: SwipePainter(_myPoints, _vertices),
         child: Scaffold(
         appBar: AppBar(
           // Here we take the value from the MyHomePage object that was created by
@@ -325,34 +327,26 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                                   child:GestureDetector(
                                     key: letterKeys[index],
                                     onPanStart: (DragStartDetails d){
-                                      _addLetter(allLevels[_currLevel].letters![index]);
                                       if(!addedKeys){addedKeys=true; _getWidgetInfo();}
-
+                                      _addLetter(allLevels[_currLevel].letters![index],letterAreas[index].cx, letterAreas[index].cy);
+                                      // print('cx '+ letterAreas[index].x1.toString()+', '+ letterAreas[index].x2.toString()+' '+letterAreas[index].cx.toString());
+                                      // print('cy '+ letterAreas[index].y1.toString()+', '+ letterAreas[index].y2.toString()+' '+letterAreas[index].cy.toString());
                                       setState(() {_myPoints.add(Offset(d.globalPosition.dx,d.globalPosition.dy));});
-                                      // setState(() {_myPoints.add(Offset(100,50));});
-                                      // setState(() {_myPoints.add(Offset(letterAreas[index].x1+10,letterAreas[index].y1+10));});
-                                      // print('');
-                                      // print(letterAreas[index].x1.toString() +'  '+ letterAreas[index].x2.toString() );
-                                      // print(letterAreas[index].y1.toString() +'  '+ letterAreas[index].y2.toString() );
-                                      // print('locall '+ d.localPosition.dx.toString()+'  '+ d.localPosition.dy.toString());
-                                      // print('globall '+ d.globalPosition.dx.toString()+'  '+ d.globalPosition.dy.toString());
-
                                     },
                                     onPanUpdate:(DragUpdateDetails dd){
                                       for(int i=0; i<3;i++){
                                         if(letterAreas[i].overlaps(dd.globalPosition.dx, dd.globalPosition.dy)){
-                                            _addLetter(allLevels[_currLevel].letters![i]);
+                                            _addLetter(allLevels[_currLevel].letters![i],letterAreas[i].cx, letterAreas[i].cy);
                                         }}
                                       setState(() {_myPoints.add(Offset(dd.globalPosition.dx,dd.globalPosition.dy));});
                                       },
                                     onPanEnd:(DragEndDetails d){
                                       _addSolvedWord(_word, context); _clearWord();
-                                      setState(() {_myPoints=[];});
+                                      setState(() {_myPoints=[]; _vertices=[];});
                                       },
                                         child:Text(allLevels[_currLevel].letters![index], style: myStyles.letters,)
                                   )
-                              );},)
-                          )
+                              );},))
                     ) ],));
                 }
                 else {
@@ -371,21 +365,6 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                     Icons.arrow_forward,
                     size: 35,
                   )),
-            // Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            //   Spacer(flex: 2,),
-            //   ElevatedButton(
-            //       // key: letterKeys,
-            //     style: myStyles.btn,
-            //     onPressed: () => _clearWord(),
-            //     child: const Icon(Icons.delete, size:35,)),
-            // Spacer(flex:1),
-            // ElevatedButton(
-            //     style: myStyles.btn,
-            //     onPressed: () => _addSolvedWord(_word, context),
-            //     child: const Icon(Icons.check, size: 35,)),
-            //   Spacer(flex: 2,),
-            // ]),
-
           ],
         ),
       ),
