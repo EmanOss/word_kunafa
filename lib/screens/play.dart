@@ -12,6 +12,8 @@ import 'my_home.dart';
 import 'package:flutter/services.dart' as rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:confetti/confetti.dart';
+import 'package:percent_indicator/percent_indicator.dart';
+
 
 
 class PlayScreen extends StatefulWidget {
@@ -53,20 +55,15 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     return allLevels[_currLevel].correct!.contains(w) && !_solved.contains(w);
   }
   Future<void> _addSolvedWord(String w, BuildContext c) async {
+    _clearWord();
     if(_checkWord(w)) {
+      // _confettiController.play();
       setState(() {
         _solved.add(w);
       });
-      _clearWord();
       if(_solved.length == 5)
         _endLevel(c);
     }
-    else {
-      // _controller.forward();
-      // await Future.delayed(Duration(milliseconds: 500));
-      // _controller.stop();
-      _clearWord();
-      }
   }
   void _endLevel(BuildContext c){
     _confettiController.play();
@@ -110,6 +107,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   }
   Future<void> _resetGame() async {
     final prefs = await SharedPreferences.getInstance();
+    _confettiController.stop();
     setState(() {
       prefs.setInt('currLevel', 0);
       _currLevel=0;
@@ -119,6 +117,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
       _initKeys();
       addedKeys=false;
       letterAreas=[];
+      levelDone=false;
     });
     Navigator.pop(context);
   }
@@ -277,7 +276,16 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-        Directionality(
+          // SizedBox(
+          //   height: 50,
+          //   width: 100,
+          //   child: LinearPercentIndicator(
+          //   width: 100.0,
+          //   lineHeight: 8.0,
+          //   percent: 0.9,
+          //   progressColor: Colors.teal,
+          // ),),
+          Directionality(
             textDirection: TextDirection.rtl,
             child:Container(height: 200, decoration: myStyles.tray,
                   child:GridView.count(
@@ -285,19 +293,19 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                     physics: const NeverScrollableScrollPhysics(),
                     children: _solved.map<Container>((s) =>Container(alignment: Alignment.topCenter,
                           child:Text(s, style: myStyles.words,),)).toList(),),)),
-            AnimatedBuilder(
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(anim.value,1),
-                    child: Container(height: 100,
-                      child:Text(_word,style: myStyles.letters,),),
-                  );
-                },
-                animation: _controller, //Tween(begin: 0, end: 2*pi).animate(_controller),
-                child://Container(child:Text("HI")),
+            // AnimatedBuilder(
+            //     builder: (context, child) {
+            //       return Transform.translate(
+            //         offset: Offset(anim.value,1),
+            //         child: Container(height: 100,
+            //           child:Text(_word,style: myStyles.letters,),),
+            //       );
+            //     },
+            //     animation: _controller, //Tween(begin: 0, end: 2*pi).animate(_controller),
+            //     child://Container(child:Text("HI")),
                 Container(height: 100, child:Text(
-                  _word,style: myStyles.letters,),)
-            ),
+                  _word,style: myStyles.letters,),),
+            // ),
             FutureBuilder(
               // key: letterKeys,
               future: _myJsonData,
@@ -374,7 +382,8 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         ConfettiWidget(
         confettiController: _confettiController,
         shouldLoop: true,
-        blastDirectionality: BlastDirectionality.directional,
+        blastDirectionality: BlastDirectionality.explosive,
+        // blastDirection: ,
         colors: const [Colors.teal, Colors.grey]),
     ]);
   }

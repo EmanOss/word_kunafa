@@ -17,7 +17,8 @@ class SwipePainter extends CustomPainter{
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawLine(vertices.last,myPoints.last, p);
+    if(vertices.length>0 && myPoints.length>0)
+      canvas.drawLine(vertices.last,myPoints.last, p);
     for(int i = 0; i < vertices.length - 1; i++)
       canvas.drawLine(vertices[i],vertices[i+1], p);
   }
