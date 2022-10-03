@@ -1,9 +1,43 @@
-import 'package:word_kunafa/screens/play.dart';
+// import 'dart:js';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../my_styles.dart';
+import 'package:word_kunafa/screens/play.dart';
 
-class MyHome extends StatelessWidget {
 
+class MyHome extends StatefulWidget {
+  @override
+  State<MyHome> createState() => _MyHomeState();
+}
 
+class _MyHomeState extends State<MyHome> {
+  late bool sound = true;
+
+  void _settings(){
+    showDialog(context: context, builder: (_)=>
+        AlertDialog(
+          title: Center(heightFactor: 1,
+              child:Text("إعدادات", style: myStyles.dialogTitle,)),
+          actions: [
+            Center(heightFactor: 1,
+                child:Row(children:[
+                  Spacer(flex: 2,),
+                  ElevatedButton(onPressed: ()=>{_toggleSound()},
+                      child: Icon((sound)?Icons.volume_down: Icons.volume_off, size: 25,)),
+            //       Spacer(flex: 1,),
+            //       ElevatedButton(
+            //           onPressed: () => _nextLevel(),
+            //           child: const Icon(Icons.arrow_forward, size: 25,)),
+                  Spacer(flex: 2,),
+                        ])),
+          ],
+        ));
+  }
+  void _toggleSound(){
+    setState(() {
+      sound=!sound;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,34 +47,26 @@ class MyHome extends StatelessWidget {
     }
 
     return Scaffold(
-      // appBar: AppBar(
-      //   // Here we take the value from the MyHomePage object that was created by
-      //   // the App.build method, and use it to set our appbar title.
-      //   title: Text(widget.title),
-      // ),
+      appBar: AppBar(
+        title: Center(
+            child: Text( 'كنافة كلمات',
+              style: myStyles.title,
+            )),
+        actions: [
+          IconButton(onPressed:()=> _settings(),
+              icon:const Icon(Icons.settings, size:25,)),
+        ],
+      ),
+
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             ElevatedButton(
                 onPressed: _play,
-                child: Text("إلعب !"))
+                child: Text("إبدأ", style: myStyles.title,))
             // ElevatedButton(
             //   child: Text("Play"),
             //   onPressed: _startGame,

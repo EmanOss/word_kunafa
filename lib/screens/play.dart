@@ -8,12 +8,12 @@ import '../area.dart';
 import '../level.dart';
 import '../my_styles.dart';
 import 'end_screen.dart';
-import 'my_home.dart';
+import 'my_home.dart' as home;
 import 'package:flutter/services.dart' as rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:confetti/confetti.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-
+// import 'package:localize_and_translate/localize_and_translate.dart';
 
 
 class PlayScreen extends StatefulWidget {
@@ -30,7 +30,6 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   late Animation<double> anim;
   late Future<List<level>> _myJsonData;
   late List<GlobalKey> letterKeys=[];
-  bool addedKeys=false;
   late List<area> letterAreas =[];
   late List<Offset> _myPoints = [];
   late List<Offset> _vertices = [];
@@ -51,19 +50,19 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     });
   }
   bool _checkWord(String w){
-    //retuns 1 if word is correct, 2 if it's in the bonus list, 0 if it's wrong
     return allLevels[_currLevel].correct!.contains(w) && !_solved.contains(w);
   }
   Future<void> _addSolvedWord(String w, BuildContext c) async {
     _clearWord();
+    print(sound);
     if(_checkWord(w)) {
-      // _confettiController.play();
       setState(() {
         _solved.add(w);
       });
       if(_solved.length == 5)
         _endLevel(c);
     }
+
   }
   void _endLevel(BuildContext c){
     _confettiController.play();
@@ -93,17 +92,14 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         _word = "";
         letterKeys = [];
         _initKeys();
-        addedKeys = false;
         letterAreas = [];
         levelDone=false;
       });
-      // Navigator.pop(context);
     }
     else{
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => endScreen()));
     }
-
   }
   Future<void> _resetGame() async {
     final prefs = await SharedPreferences.getInstance();
@@ -115,7 +111,6 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
       _word="";
       letterKeys=[];
       _initKeys();
-      addedKeys=false;
       letterAreas=[];
       levelDone=false;
     });
@@ -167,18 +162,19 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         ));
   }
   void _back() {
-    // Navigator.pop(context);
+    Navigator.pop(context);
   }
   void _initKeys(){
-    for(int i=0; i<3;i++){
+    for(int i=0; i<allLevels[_currLevel].letters!.length;i++){
       letterKeys.add(GlobalKey());
     }
   }
+  @override
   void initState() {
     super.initState();
-    _initKeys();
-    _myJsonData = ReadJsonData();
     _initLevel();
+    _myJsonData = ReadJsonData();
+    // _initKeys();
     //animation section
     _controller = AnimationController(
       duration: const Duration(milliseconds: 70),
@@ -219,12 +215,12 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     setState(() {
       allLevels = res;
     });
+    _initKeys();
     return res;
   }
-
   void _getWidgetInfo() =>
-      WidgetsBinding.instance?.addPostFrameCallback((_) {
-        for(int i=0;i<3;i++){
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for(int i=0;i<allLevels[_currLevel].letters!.length;i++){
           final RenderBox renderBox = letterKeys[i].currentContext?.findRenderObject() as RenderBox;
           double w = renderBox.size.width;
           double h = renderBox.size.height;
@@ -233,9 +229,13 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           letterAreas.add(area(x1,x1+w,y1,y1+h));
           // print(x1.toString() +"  "+ (x1+w).toString() +"  "+y1.toString()+"  "+(y1+h).toString());
         }});
+  void _bugReport(){
+    //todo
+  }
 
   @override
   Widget build(BuildContext context) {
+    if(letterAreas.length==0)_getWidgetInfo();
     return Stack(children: [CustomPaint(
         foregroundPainter: SwipePainter(_myPoints, _vertices),
         child: Scaffold(
@@ -250,6 +250,8 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           leading: IconButton(onPressed:()=> _back(),
               icon:const Icon(Icons.arrow_back_ios, size:25,)),
           actions: [
+            IconButton(onPressed:()=> _bugReport(),
+                icon:const Icon(Icons.email, size:25,)),
             IconButton(onPressed:()=> _hint(),
                 icon:const Icon(Icons.lightbulb, size:25,)),
             IconButton(onPressed:()=> _settings(),
@@ -276,15 +278,19 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-          // SizedBox(
-          //   height: 50,
-          //   width: 100,
-          //   child: LinearPercentIndicator(
-          //   width: 100.0,
-          //   lineHeight: 8.0,
-          //   percent: 0.9,
-          //   progressColor: Colors.teal,
-          // ),),
+          SizedBox(
+            height: 30,
+            width: 300,
+            child:LinearPercentIndicator(
+            // width: 200.0,
+            barRadius: Radius.circular(10),
+            lineHeight: 20.0,
+            // center: Text((_solved.length).toString() +' / 5',
+            //   style: TextStyle(color: Colors.white),
+            // ),
+            percent: _solved.length/5,
+            progressColor: Colors.teal,
+            ),),
           Directionality(
             textDirection: TextDirection.rtl,
             child:Container(height: 200, decoration: myStyles.tray,
@@ -334,14 +340,13 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                                   child:GestureDetector(
                                     key: letterKeys[index],
                                     onPanStart: (DragStartDetails d){
-                                      if(!addedKeys){addedKeys=true; _getWidgetInfo();}
                                       _addLetter(allLevels[_currLevel].letters![index],letterAreas[index].cx, letterAreas[index].cy);
                                       // print('cx '+ letterAreas[index].x1.toString()+', '+ letterAreas[index].x2.toString()+' '+letterAreas[index].cx.toString());
                                       // print('cy '+ letterAreas[index].y1.toString()+', '+ letterAreas[index].y2.toString()+' '+letterAreas[index].cy.toString());
                                       setState(() {_myPoints.add(Offset(d.globalPosition.dx,d.globalPosition.dy));});
                                     },
                                     onPanUpdate:(DragUpdateDetails dd){
-                                      for(int i=0; i<3;i++){
+                                      for(int i=0; i<letterAreas.length;i++){
                                         if(letterAreas[i].overlaps(dd.globalPosition.dx, dd.globalPosition.dy)){
                                             _addLetter(allLevels[_currLevel].letters![i],letterAreas[i].cx, letterAreas[i].cy);
                                         }}
