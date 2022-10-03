@@ -54,7 +54,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   }
   Future<void> _addSolvedWord(String w, BuildContext c) async {
     _clearWord();
-    print(sound);
+    // print(sound);
     if(_checkWord(w)) {
       setState(() {
         _solved.add(w);
