@@ -2,8 +2,10 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:word_kunafa/DictionaryModel.dart';
 import 'dart:convert';
 import '../SwipePainter.dart';
+import '../api_service.dart';
 import '../area.dart';
 import '../level.dart';
 import '../my_styles.dart';
@@ -50,6 +52,8 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     });
   }
   bool _checkWord(String w){
+    _checkWord2(w);
+    // print(DateTime.now());
     return allLevels[_currLevel].correct!.contains(w) && !_solved.contains(w);
   }
   Future<void> _addSolvedWord(String w, BuildContext c) async {
@@ -231,6 +235,15 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         }});
   void _bugReport(){
     //todo
+  }
+
+  late List<DictionaryModel>? _wordModel = [];
+  void _checkWord2(String word) async {
+    var _wordModel = (await ApiService().getWord(word));
+    // Future.delayed(const Duration(seconds: 1)).then((value) => setState(() {}));
+    print('API output hena');
+    // print(_wordModel?.first.id);
+    // print(DateTime.now());
   }
 
   @override
