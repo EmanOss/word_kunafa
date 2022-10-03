@@ -52,8 +52,8 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     });
   }
   bool _checkWord(String w){
-    _checkWord2(w);
-    // print(DateTime.now());
+    // _checkWord2(w);
+    // print(b);
     return allLevels[_currLevel].correct!.contains(w) && !_solved.contains(w);
   }
   Future<void> _addSolvedWord(String w, BuildContext c) async {
@@ -237,13 +237,15 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     //todo
   }
 
-  late List<DictionaryModel>? _wordModel = [];
-  void _checkWord2(String word) async {
-    var _wordModel = (await ApiService().getWord(word));
+  late DictionaryModel? _wordModel;
+  Future<bool?> _checkWord2(String word) async {
+    _wordModel = (await ApiService().getWord(word));
     // Future.delayed(const Duration(seconds: 1)).then((value) => setState(() {}));
-    print('API output hena');
-    // print(_wordModel?.first.id);
+    // print('API output hena');
+    // print(_wordModel?.results[0]);
     // print(DateTime.now());
+    // print(_wordModel?.results.isNotEmpty);
+    return _wordModel?.results.isNotEmpty;
   }
 
   @override
