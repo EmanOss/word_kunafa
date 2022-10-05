@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:wiredash/wiredash.dart';
 import 'package:word_kunafa/DictionaryModel.dart';
 import 'dart:convert';
 import '../SwipePainter.dart';
@@ -15,7 +16,6 @@ import 'package:flutter/services.dart' as rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:confetti/confetti.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-// import 'package:localize_and_translate/localize_and_translate.dart';
 
 
 class PlayScreen extends StatefulWidget {
@@ -146,7 +146,9 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
       while (_solved.contains(curr[i])) {
         random.nextInt(curr.length);
       }
-      _word = curr[i][0];
+      setState(() {
+        _word = curr[i][0];
+      });
       Navigator.pop(context);
   }
   void _hint(){
@@ -234,7 +236,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           // print(x1.toString() +"  "+ (x1+w).toString() +"  "+y1.toString()+"  "+(y1+h).toString());
         }});
   void _bugReport(){
-    //todo
+    Wiredash.of(context).show();
   }
 
   late DictionaryModel? _wordModel;
@@ -251,7 +253,10 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     if(letterAreas.length==0)_getWidgetInfo();
-    return Stack(children: [CustomPaint(
+    return Wiredash(
+      projectId: 'word-kunafa-jrubrti',
+      secret: '-T2WzQHHlFOaauAmbKrY5jfGXTxQgIak',
+      child:Stack(children: [CustomPaint(
         foregroundPainter: SwipePainter(_myPoints, _vertices),
         child: Scaffold(
         appBar: AppBar(
@@ -405,6 +410,6 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         blastDirectionality: BlastDirectionality.explosive,
         // blastDirection: ,
         colors: const [Colors.teal, Colors.grey]),
-    ]);
+    ]));
   }
 }
