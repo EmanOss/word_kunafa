@@ -251,6 +251,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   }
   Future<void> collectDictionary() async {
     //page???
+    int page =1;
     _wordModel = (await ApiService().getWordandPage(page));
     //write the words to json file
     //add definitions???
