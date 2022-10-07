@@ -236,7 +236,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           // print(x1.toString() +"  "+ (x1+w).toString() +"  "+y1.toString()+"  "+(y1+h).toString());
         }});
   void _bugReport(){
-    Wiredash.of(context).show();
+    Wiredash.of(context).show(inheritMaterialTheme: true);
   }
 
   late DictionaryModel? _wordModel;
@@ -249,14 +249,17 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     // print(_wordModel?.results.isNotEmpty);
     return _wordModel?.results.isNotEmpty;
   }
+  Future<void> collectDictionary() async {
+    //page???
+    _wordModel = (await ApiService().getWordandPage(page));
+    //write the words to json file
+    //add definitions???
+  }
 
   @override
   Widget build(BuildContext context) {
     if(letterAreas.length==0)_getWidgetInfo();
-    return Wiredash(
-      projectId: 'word-kunafa-jrubrti',
-      secret: '-T2WzQHHlFOaauAmbKrY5jfGXTxQgIak',
-      child:Stack(children: [CustomPaint(
+    return Stack(children: [CustomPaint(
         foregroundPainter: SwipePainter(_myPoints, _vertices),
         child: Scaffold(
         appBar: AppBar(
@@ -410,6 +413,6 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         blastDirectionality: BlastDirectionality.explosive,
         // blastDirection: ,
         colors: const [Colors.teal, Colors.grey]),
-    ]));
+    ]);
   }
 }

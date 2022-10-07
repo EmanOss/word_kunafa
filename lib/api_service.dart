@@ -22,6 +22,23 @@ class ApiService {
       log(e.toString());
     }
   }
+  Future<DictionaryModel?> getWordandPage(int page) async {
+    try {
+      // var url = Uri.parse(ApiConstants.baseUrl + ApiConstants.searchEndpoint);
+      // var response = await http.get(url);
+
+      var response = await http.get(Uri.https(ApiConstants.baseUrl, ApiConstants.searchEndpoint,
+          {'page': page, 'language': 'ar', 'analyzed': 'true', 'morph': 'true'}),
+          headers: ApiConstants.headers);
+
+      if (response.statusCode == 200) {
+        DictionaryModel _model = dictionaryModelFromJson(response.body);
+        return _model;
+      }
+    } catch (e) {
+      log(e.toString());
+    }
+  }
 }
 
 

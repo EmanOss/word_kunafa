@@ -1,3 +1,4 @@
+import 'package:wiredash/wiredash.dart';
 import 'package:word_kunafa/screens/my_home.dart';
 import 'package:word_kunafa/screens/play.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,11 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return Wiredash(
+     feedbackOptions: WiredashFeedbackOptions(email:  EmailPrompt.hidden, ),
+        projectId: 'word-kunafa-jrubrti',
+        secret: '-T2WzQHHlFOaauAmbKrY5jfGXTxQgIak',
+        child:MaterialApp(
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -27,8 +32,8 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.teal,
       ),
-      home:MyHome(),
-    );
+        home:MyHome(),
+    ));
   }
 }
 
