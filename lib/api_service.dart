@@ -28,7 +28,7 @@ class ApiService {
       // var response = await http.get(url);
 
       var response = await http.get(Uri.https(ApiConstants.baseUrl, ApiConstants.searchEndpoint,
-          {'page': page, 'language': 'ar', 'analyzed': 'true', 'morph': 'true'}),
+          {'page': page.toString(), 'language': 'ar', 'analyzed': 'true', 'morph': 'true'}),
           headers: ApiConstants.headers);
 
       if (response.statusCode == 200) {

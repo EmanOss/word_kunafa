@@ -4,11 +4,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:wiredash/wiredash.dart';
 import 'package:word_kunafa/DictionaryModel.dart';
+import 'package:word_kunafa/wordFile.dart';
 import 'dart:convert';
 import '../SwipePainter.dart';
 import '../api_service.dart';
 import '../area.dart';
 import '../level.dart';
+import '../wordFile.dart';
 import '../my_styles.dart';
 import 'end_screen.dart';
 import 'my_home.dart' as home;
@@ -16,6 +18,8 @@ import 'package:flutter/services.dart' as rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:confetti/confetti.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:json_annotation/json_annotation.dart';
+
 
 
 class PlayScreen extends StatefulWidget {
@@ -37,6 +41,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   late List<Offset> _vertices = [];
   bool levelDone = false;
   final _confettiController = ConfettiController();
+  late Map<String,dynamic> wordDefs ={};
 
   void _addLetter(String c, double x, double y) {
     if(!(_word.contains(c))){
@@ -54,6 +59,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   bool _checkWord(String w){
     // _checkWord2(w);
     // print(b);
+    collectDictionary();
     return allLevels[_currLevel].correct!.contains(w) && !_solved.contains(w);
   }
   Future<void> _addSolvedWord(String w, BuildContext c) async {
@@ -250,11 +256,21 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     return _wordModel?.results.isNotEmpty;
   }
   Future<void> collectDictionary() async {
-    //page???
-    int page =1;
-    _wordModel = (await ApiService().getWordandPage(page));
-    //write the words to json file
-    //add definitions???
+    //without defs, the json is a big list and just do .contains
+    final jsondata1 = await rootBundle.rootBundle.loadString('assets/words.json');
+    List<dynamic> p1 = jsonDecode(jsondata1);
+    // p.contains();
+
+    //with defs
+    final jsondata = await rootBundle.rootBundle.loadString('assets/wordsDef.json');
+    List<dynamic> p = jsonDecode(jsondata) as List<dynamic>;
+    var defs = p.map((e) => wordFile.fromJson(e)).toList();
+    for(var w in defs){
+      setState(() {
+        wordDefs[w.word!]=w.def;
+      });
+    }
+    // print(newDefs.containsKey('إنتظر'));
   }
 
   @override

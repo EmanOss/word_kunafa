@@ -6,7 +6,7 @@ class level {
 // constructor
   level({this.letters, this.correct});
 
-  //method that assign values to respective datatype vairables
+  //method that assign values to respective datatype variables
   level.fromJson(Map<String, dynamic> json) {
     letters = List.from(json['letters']);
     correct = List.from(json['correct']);
