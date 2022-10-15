@@ -42,6 +42,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   bool levelDone = false;
   final _confettiController = ConfettiController();
   late Map<String,dynamic> wordDefs ={};
+  late List<dynamic> allWords=[];
 
   void _addLetter(String c, double x, double y) {
     if(!(_word.contains(c))){
@@ -57,9 +58,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     });
   }
   bool _checkWord(String w){
-    // _checkWord2(w);
-    // print(b);
-    collectDictionary();
+    _checkWord2(w);
     return allLevels[_currLevel].correct!.contains(w) && !_solved.contains(w);
   }
   Future<void> _addSolvedWord(String w, BuildContext c) async {
@@ -186,6 +185,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     super.initState();
     _initLevel();
     _myJsonData = ReadJsonData();
+    collectDictionary();
     // _initKeys();
     //animation section
     _controller = AnimationController(
@@ -247,29 +247,26 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
 
   late DictionaryModel? _wordModel;
   Future<bool?> _checkWord2(String word) async {
-    _wordModel = (await ApiService().getWord(word));
-    // Future.delayed(const Duration(seconds: 1)).then((value) => setState(() {}));
-    // print('API output hena');
-    // print(_wordModel?.results[0]);
-    // print(DateTime.now());
-    // print(_wordModel?.results.isNotEmpty);
-    return _wordModel?.results.isNotEmpty;
+    print(allWords.contains(word));
+    return allWords.contains(word);
   }
   Future<void> collectDictionary() async {
     //without defs, the json is a big list and just do .contains
     final jsondata1 = await rootBundle.rootBundle.loadString('assets/words.json');
-    List<dynamic> p1 = jsonDecode(jsondata1);
-    // p.contains();
+    setState((){
+      allWords = jsonDecode(jsondata1);
+    });
+    // allWords.contains();
 
-    //with defs
-    final jsondata = await rootBundle.rootBundle.loadString('assets/wordsDef.json');
-    List<dynamic> p = jsonDecode(jsondata) as List<dynamic>;
-    var defs = p.map((e) => wordFile.fromJson(e)).toList();
-    for(var w in defs){
-      setState(() {
-        wordDefs[w.word!]=w.def;
-      });
-    }
+    //with defs -KEEP - todo decide how to do this
+    // final jsondata = await rootBundle.rootBundle.loadString('assets/wordsDef.json');
+    // List<dynamic> p = jsonDecode(jsondata) as List<dynamic>;
+    // var defs = p.map((e) => wordFile.fromJson(e)).toList();
+    // for(var w in defs){
+    //   setState(() {
+    //     wordDefs[w.word!]=w.def;
+    //   });
+    // }
     // print(newDefs.containsKey('إنتظر'));
   }
 
