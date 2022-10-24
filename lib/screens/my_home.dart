@@ -1,6 +1,7 @@
 // import 'dart:js';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:showcaseview/showcaseview.dart';
 import '../my_styles.dart';
 import 'package:word_kunafa/screens/play.dart';
 
@@ -43,7 +44,12 @@ class _MyHomeState extends State<MyHome> {
   Widget build(BuildContext context) {
     void _play(){
       Navigator.push(context,
-          MaterialPageRoute(builder: (context) => PlayScreen()));
+          // MaterialPageRoute(builder: (context) => PlayScreen()));
+      MaterialPageRoute(builder: (context) =>
+          ShowCaseWidget(
+        builder: Builder(
+          builder: (context) => PlayScreen(),),
+      ),));
     }
 
     return Scaffold(

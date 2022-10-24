@@ -45,5 +45,12 @@ class myStyles {
         )
       ]);
 
+  static final smallBtn = ButtonStyle(
+    backgroundColor:MaterialStateProperty.all<Color>(Colors.transparent),
+    foregroundColor:MaterialStateProperty.all<Color>(Colors.teal),
+    elevation: MaterialStateProperty.all<double>(0),
+
+  );
+  //
   // static const glow2 =
 }

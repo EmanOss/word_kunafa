@@ -1,3 +1,4 @@
+import 'package:showcaseview/showcaseview.dart';
 import 'package:wiredash/wiredash.dart';
 import 'package:word_kunafa/screens/my_home.dart';
 import 'package:word_kunafa/screens/play.dart';
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.teal,
       ),
-        home:MyHome(),
+        home: MyHome(),
     ));
   }
 }
