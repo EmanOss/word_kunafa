@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:confirm_dialog/confirm_dialog.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'package:wiredash/wiredash.dart';
 import 'package:word_kunafa/DictionaryModel.dart';
 import 'package:word_kunafa/wordFile.dart';
@@ -21,7 +23,6 @@ import 'package:percent_indicator/percent_indicator.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 
-
 class PlayScreen extends StatefulWidget {
   @override
   State<PlayScreen> createState() => _PlayScreenState();
@@ -29,6 +30,7 @@ class PlayScreen extends StatefulWidget {
 
 class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   String _word = "";
+  int winLength =6;
   List<String> _solved = [];
   int _currLevel=0;
   List<level> allLevels=[];
@@ -43,6 +45,9 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   final _confettiController = ConfettiController();
   late Map<String,dynamic> wordDefs ={};
   late List<dynamic> allWords=[];
+  final GlobalKey mailKey = GlobalKey(), hintKey = GlobalKey(), swipeKey= GlobalKey();
+  // late final prefs;
+  late bool shownTut;
 
   void _addLetter(String c, double x, double y) {
     if(!(_word.contains(c))){
@@ -68,7 +73,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
       setState(() {
         _solved.add(w);
       });
-      if(_solved.length == 5)
+      if(_solved.length == winLength)
         _endLevel(c);
     }
 
@@ -110,6 +115,22 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           MaterialPageRoute(builder: (context) => endScreen()));
     }
   }
+  void _checkReset(){
+    showDialog(context: context, builder: (_)=>
+        AlertDialog(
+          content: Directionality(textDirection: TextDirection.rtl,
+              child:Text('هل أنت متأكد من العودة لأول مستوى؟')),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            ElevatedButton(
+                onPressed: ()=>{Navigator.pop(context)},
+                child:Text('لا'), style:myStyles.smallBtn),
+            ElevatedButton(
+                onPressed: ()=>{_resetGame()},
+                child:Text('نعم') , style:myStyles.smallBtn),
+          ],
+        ));
+  }
   Future<void> _resetGame() async {
     final prefs = await SharedPreferences.getInstance();
     _confettiController.stop();
@@ -134,8 +155,10 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           Center(heightFactor: 1,
           child:Row(children:[
             Spacer(flex: 2,),
-            ElevatedButton(onPressed: ()=>{_resetGame()},
-                child: const Icon(Icons.refresh, size: 25,)),
+            ElevatedButton(
+                onPressed: ()=>{_checkReset()},
+                child:Text('العودة لمستوى 1') ),
+                // const Icon(Icons.refresh, size: 25,)),
             Spacer(flex: 1,),
             ElevatedButton(
                 onPressed: () => _nextLevel(),
@@ -175,7 +198,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   void _back() {
     Navigator.pop(context);
   }
-  void _initKeys(){
+  void _initKeys() {
     for(int i=0; i<allLevels[_currLevel].letters!.length;i++){
       letterKeys.add(GlobalKey());
     }
@@ -186,7 +209,6 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     _initLevel();
     _myJsonData = ReadJsonData();
     collectDictionary();
-    // _initKeys();
     //animation section
     _controller = AnimationController(
       duration: const Duration(milliseconds: 70),
@@ -203,10 +225,27 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         _controller.forward();
       }
     });
+    _showTut();
+  }
+  Future<void> _showTut() async {
+    final prefs= await SharedPreferences.getInstance();
+    setState(() {
+      shownTut = prefs.getBool('shownTut')?? false;
+    });
+    if(!shownTut){
+      WidgetsBinding.instance!.addPostFrameCallback(
+            (_) => ShowCaseWidget.of(context)!.startShowCase(
+          [swipeKey, hintKey, mailKey],),);
+      setState(() {
+        shownTut=true;
+        prefs.setBool('shownTut', true);
+      });
+    }
+
   }
   Future<void> _initLevel() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
+    setState(() async {
+      final prefs = await SharedPreferences.getInstance();
       _currLevel = prefs.getInt('currLevel') ?? 0;
     });
   }
@@ -287,10 +326,27 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           leading: IconButton(onPressed:()=> _back(),
               icon:const Icon(Icons.arrow_back_ios, size:25,)),
           actions: [
-            IconButton(onPressed:()=> _bugReport(),
-                icon:const Icon(Icons.email, size:25,)),
-            IconButton(onPressed:()=> _hint(),
-                icon:const Icon(Icons.lightbulb, size:25,)),
+            IconButton(
+              onPressed: () => setState(() {
+                ShowCaseWidget.of(context)!.startShowCase([swipeKey, hintKey, mailKey]);
+              }),
+              icon: const Icon(
+                Icons.help_rounded,
+              ),
+            ),
+            Showcase(
+                key:mailKey,
+                description:'اضغط هنا لإضافة تعليق أو للابلاغ عن مشكلة',
+                child:IconButton(onPressed:()=> _bugReport(),
+                icon:const Icon(Icons.email, size:25,))),
+            Showcase(
+                key:hintKey,
+                description:'اضغط هنا للحصول على مساعدة',
+                // disposeOnTap: true,
+                // onTargetClick: () {_hint();
+                // setState(() {ShowCaseWidget.of(context)!.startShowCase([mailKey]);});},
+                child:IconButton(onPressed:()=> _hint(),
+                icon:const Icon(Icons.lightbulb, size:25,))),
             IconButton(onPressed:()=> _settings(),
             icon:const Icon(Icons.settings, size:25,)),
           ],
@@ -325,7 +381,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
             // center: Text((_solved.length).toString() +' / 5',
             //   style: TextStyle(color: Colors.white),
             // ),
-            percent: _solved.length/5,
+            percent: _solved.length/winLength,
             progressColor: Colors.teal,
             ),),
           Directionality(
@@ -349,7 +405,10 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                 Container(height: 100, child:Text(
                   _word,style: myStyles.letters,),),
             // ),
-            FutureBuilder(
+            Showcase(
+                key:swipeKey,
+                description:'اسحب الحروف لتكون كلمات',
+                child:FutureBuilder(
               // key: letterKeys,
               future: _myJsonData,
               builder: (context, data) {
@@ -360,7 +419,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                   //once data is ready this else block will execute
                   // items will hold all the data of DataModel
                   //items[index].name can be used to fetch name of product as done below
-                  var items = data.data as List<level>;
+                  // var items = data.data as List<level>;
                   return Directionality(
                       textDirection: TextDirection.rtl,
                       child:Flex(direction: Axis.horizontal,
@@ -395,8 +454,8 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                                       },
                                         child:Text(allLevels[_currLevel].letters![index], style: myStyles.letters,)
                                   )
-                              );},))
-                    ) ],));
+                              );},)
+                    )) ],));
                 }
                 else {
                   // show circular progress while data is getting fetched from json file
@@ -405,11 +464,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                   );
                 }
               },
-            ),
-
-            // if(_solved.length == 5)
-            //   Stack(alignment: Alignment.center,
-            //       children:[
+            )),
             if(levelDone)
             ElevatedButton(
                 style: myStyles.btn,
