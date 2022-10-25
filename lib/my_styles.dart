@@ -13,11 +13,11 @@ class myStyles {
     color: Colors.brown,
   );
   static const dialogTitle = TextStyle(
-    fontSize: 40,
+    fontSize: 35,
     color: Colors.brown,
   );
   static const btnText = TextStyle(
-    fontSize: 20,
+    fontSize: 15,
     // color: Colors.brown,
   );
   static final btn = ButtonStyle(
@@ -49,8 +49,5 @@ class myStyles {
     backgroundColor:MaterialStateProperty.all<Color>(Colors.transparent),
     foregroundColor:MaterialStateProperty.all<Color>(Colors.teal),
     elevation: MaterialStateProperty.all<double>(0),
-
   );
-  //
-  // static const glow2 =
 }

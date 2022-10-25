@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:math';
+// import 'package:audioplayers/audioplayers.dart';
 import 'package:confirm_dialog/confirm_dialog.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
@@ -20,7 +22,6 @@ import 'package:flutter/services.dart' as rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:confetti/confetti.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-import 'package:json_annotation/json_annotation.dart';
 
 
 class PlayScreen extends StatefulWidget {
@@ -48,6 +49,10 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   final GlobalKey mailKey = GlobalKey(), hintKey = GlobalKey(), swipeKey= GlobalKey();
   // late final prefs;
   late bool shownTut;
+  // final player = AudioPlayer();                   // Create a player
+
+  final correctAudio = AudioPlayer();
+  bool muted = false;
 
   void _addLetter(String c, double x, double y) {
     if(!(_word.contains(c))){
@@ -70,6 +75,9 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     _clearWord();
     // print(sound);
     if(_checkWord(w)) {
+      if(!muted)
+        // correctAudio.play(DeviceFileSource('assets/audio/correct1.mp3'));
+      // await correctAudio.stop();
       setState(() {
         _solved.add(w);
       });
@@ -151,21 +159,25 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         AlertDialog(
           title: Center(heightFactor: 1,
             child:Text("إعدادات", style: myStyles.dialogTitle,)),
+          actionsAlignment: MainAxisAlignment.center,
           actions: [
-          Center(heightFactor: 1,
-          child:Row(children:[
-            Spacer(flex: 2,),
             ElevatedButton(
                 onPressed: ()=>{_checkReset()},
-                child:Text('العودة لمستوى 1') ),
+                child:Text('العودة لمستوى 1', style: myStyles.btnText,),style: myStyles.smallBtn ),
                 // const Icon(Icons.refresh, size: 25,)),
-            Spacer(flex: 1,),
-            ElevatedButton(
-                onPressed: () => _nextLevel(),
-                child: const Icon(Icons.arrow_forward, size: 25,)),
-            Spacer(flex: 2,),])),
-          ],
-        ));
+            // ElevatedButton(
+            //     onPressed: () => _nextLevel(),
+            //     child: const Icon(Icons.arrow_forward, size: 25,),style: myStyles.smallBtn,),
+            IconButton(
+              onPressed: () => setState(() {
+                Navigator.pop(context);
+                ShowCaseWidget.of(context)!.startShowCase([swipeKey, hintKey, mailKey]);
+              }),
+              icon: const Icon(
+                Icons.help_rounded,
+                color: Colors.teal,
+                size: 25,
+              ),),],));
   }
   void _showLetter() {
       List? curr = allLevels[_currLevel].correct;
@@ -189,7 +201,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
                 child:Row(children:[
                   Spacer(flex: 2,),
                   ElevatedButton(onPressed: ()=>{_showLetter()},
-                      child: Text("إظهار أول حرف")),
+                      child: Text("إظهار أول حرف", style: myStyles.btnText), style: myStyles.smallBtn,),
                   Spacer(flex: 2,),
                   ])),
           ],
@@ -326,14 +338,6 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           leading: IconButton(onPressed:()=> _back(),
               icon:const Icon(Icons.arrow_back_ios, size:25,)),
           actions: [
-            IconButton(
-              onPressed: () => setState(() {
-                ShowCaseWidget.of(context)!.startShowCase([swipeKey, hintKey, mailKey]);
-              }),
-              icon: const Icon(
-                Icons.help_rounded,
-              ),
-            ),
             Showcase(
                 key:mailKey,
                 description:'اضغط هنا لإضافة تعليق أو للابلاغ عن مشكلة',

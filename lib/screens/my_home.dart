@@ -12,7 +12,7 @@ class MyHome extends StatefulWidget {
 }
 
 class _MyHomeState extends State<MyHome> {
-  late bool sound = true;
+  late bool muted = false;
 
   void _settings(){
     showDialog(context: context, builder: (_)=>
@@ -24,7 +24,7 @@ class _MyHomeState extends State<MyHome> {
                 child:Row(children:[
                   Spacer(flex: 2,),
                   ElevatedButton(onPressed: ()=>{_toggleSound()},
-                      child: Icon((sound)?Icons.volume_down: Icons.volume_off, size: 25,)),
+                      child: Icon((muted)? Icons.volume_off:Icons.volume_down, size: 25,)),
             //       Spacer(flex: 1,),
             //       ElevatedButton(
             //           onPressed: () => _nextLevel(),
@@ -36,7 +36,7 @@ class _MyHomeState extends State<MyHome> {
   }
   void _toggleSound(){
     setState(() {
-      sound=!sound;
+      muted=!muted;
     });
   }
 
