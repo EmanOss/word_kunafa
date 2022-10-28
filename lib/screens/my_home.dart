@@ -12,7 +12,7 @@ class MyHome extends StatefulWidget {
 }
 
 class _MyHomeState extends State<MyHome> {
-  late bool muted = false;
+  late List<bool> muted = [true]; //intially sound is on
 
   void _settings(){
     showDialog(context: context, builder: (_)=>
@@ -23,8 +23,15 @@ class _MyHomeState extends State<MyHome> {
             Center(heightFactor: 1,
                 child:Row(children:[
                   Spacer(flex: 2,),
-                  ElevatedButton(onPressed: ()=>{_toggleSound()},
-                      child: Icon((muted)? Icons.volume_off:Icons.volume_down, size: 25,)),
+                  ToggleButtons(children: [Icon(Icons.volume_off,size:30), Icon(Icons.volume_down,size:30)],
+                      isSelected: muted,
+                    onPressed: (int i){
+                    setState(() {
+                      muted[i]=!muted[i];
+                    });
+                    }),
+                  // ElevatedButton(onPressed: ()=>{_toggleSound()},
+                  //     child: Icon((muted)? Icons.volume_off:Icons.volume_down, size: 30,)),
             //       Spacer(flex: 1,),
             //       ElevatedButton(
             //           onPressed: () => _nextLevel(),
@@ -34,11 +41,11 @@ class _MyHomeState extends State<MyHome> {
           ],
         ));
   }
-  void _toggleSound(){
-    setState(() {
-      muted=!muted;
-    });
-  }
+  // void _toggleSound(){
+  //   setState(() {
+  //     muted=!muted;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {

@@ -76,7 +76,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
     // print(sound);
     if(_checkWord(w)) {
       if(!muted)
-        // correctAudio.play(DeviceFileSource('assets/audio/correct1.mp3'));
+        correctAudio.play();
       // await correctAudio.stop();
       setState(() {
         _solved.add(w);
@@ -163,21 +163,13 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
           actions: [
             ElevatedButton(
                 onPressed: ()=>{_checkReset()},
-                child:Text('العودة لمستوى 1', style: myStyles.btnText,),style: myStyles.smallBtn ),
-                // const Icon(Icons.refresh, size: 25,)),
-            // ElevatedButton(
-            //     onPressed: () => _nextLevel(),
-            //     child: const Icon(Icons.arrow_forward, size: 25,),style: myStyles.smallBtn,),
-            IconButton(
+                child:const Icon(Icons.refresh, size: 30,)),
+            ElevatedButton(
               onPressed: () => setState(() {
                 Navigator.pop(context);
                 ShowCaseWidget.of(context)!.startShowCase([swipeKey, hintKey, mailKey]);
               }),
-              icon: const Icon(
-                Icons.help_rounded,
-                color: Colors.teal,
-                size: 25,
-              ),),],));
+              child: const Icon(Icons.help_outline, size: 30,),),],));
   }
   void _showLetter() {
       List? curr = allLevels[_currLevel].correct;
@@ -196,16 +188,11 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         AlertDialog(
           title: Center(heightFactor: 1,
               child:Text("مساعدة", style: myStyles.dialogTitle,)),
+          actionsAlignment: MainAxisAlignment.center,
           actions: [
-            Center(heightFactor: 1,
-                child:Row(children:[
-                  Spacer(flex: 2,),
-                  ElevatedButton(onPressed: ()=>{_showLetter()},
-                      child: Text("إظهار أول حرف", style: myStyles.btnText), style: myStyles.smallBtn,),
-                  Spacer(flex: 2,),
-                  ])),
-          ],
-        ));
+            ElevatedButton(onPressed: ()=>{_showLetter()},
+                child: Text("إظهار أول حرف", style: myStyles.btnText), ),
+          ],));
   }
   void _back() {
     Navigator.pop(context);
@@ -219,6 +206,7 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initLevel();
+    _initAudio();
     _myJsonData = ReadJsonData();
     collectDictionary();
     //animation section
@@ -294,6 +282,9 @@ class _PlayScreenState extends State<PlayScreen> with TickerProviderStateMixin {
         }});
   void _bugReport(){
     Wiredash.of(context).show(inheritMaterialTheme: true);
+  }
+  Future<void> _initAudio() async {
+    await correctAudio.setUrl('assets/audio/correct1.mp3');
   }
 
   late DictionaryModel? _wordModel;
