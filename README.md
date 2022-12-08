@@ -1,4 +1,5 @@
-# Word_Kunafa, an Arabic word game
+# Word_Kunafa
+An Arabic word game
 
 Developed using Flutter.
 
